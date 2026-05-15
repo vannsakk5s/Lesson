@@ -40,9 +40,9 @@ SELECT * FROM dept50;
 > **NOTE:** This will throw an error (ORA-01402) because of the `WITH CHECK OPTION`
 
 ```sql
--- UPDATE dept50
--- SET deptno = 80
--- WHERE employee = 'Matos';
+UPDATE dept50
+SET deptno = 80
+WHERE employee = 'Matos';
 ```
 
 ## PART 2: Sequences, Indexes, and Synonyms
@@ -76,5 +76,6 @@ CREATE INDEX dept_name_idx ON dept (name);
 
 **10. Create a synonym for the `EMPLOYEES` table**
 ```sql
-CREATE SYNONYM emp FOR employees;
-```
+CREATE SYNONYM emp
+FOR employees;
+```
