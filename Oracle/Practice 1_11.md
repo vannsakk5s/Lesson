@@ -3,6 +3,7 @@
 ## PART 1: Creating, Using, and Removing Views
 
 **1. Create `EMPLOYEES_VU` view**
+
 ```sql
 CREATE OR REPLACE VIEW employees_vu AS
 SELECT employee_id, last_name AS employee, department_id
@@ -10,17 +11,20 @@ FROM employees;
 ```
 
 **2. Display the contents of `EMPLOYEES_VU`**
+
 ```sql
 SELECT * FROM employees_vu;
 ```
 
 **3. Display employee names and department numbers from the view**
+
 ```sql
-SELECT employee, department_id 
+SELECT employee, department_id
 FROM employees_vu;
 ```
 
 **4. Create `DEPT50` view with security constraint (WITH CHECK OPTION)**
+
 ```sql
 CREATE OR REPLACE VIEW dept50 (empno, employee, deptno) AS
 SELECT employee_id, last_name, department_id
@@ -30,6 +34,7 @@ WITH CHECK OPTION CONSTRAINT dept50_check;
 ```
 
 **5. Display the structure and contents of `DEPT50`**
+
 ```sql
 DESCRIBE dept50;
 SELECT * FROM dept50;
@@ -48,6 +53,7 @@ WHERE employee = 'Matos';
 ## PART 2: Sequences, Indexes, and Synonyms
 
 **7. Create `DEPT_ID_SEQ` sequence**
+
 ```sql
 CREATE SEQUENCE dept_id_seq
 START WITH 200
@@ -56,6 +62,7 @@ MAXVALUE 1000;
 ```
 
 **8. Insert two rows into the `DEPT` table using the sequence**
+
 ```sql
 INSERT INTO dept (id, name)
 VALUES (dept_id_seq.NEXTVAL, 'Education');
@@ -65,16 +72,19 @@ VALUES (dept_id_seq.NEXTVAL, 'Administration');
 ```
 
 **Confirm additions**
+
 ```sql
 SELECT * FROM dept;
 ```
 
 **9. Create a nonunique index on the `NAME` column in the `DEPT` table**
+
 ```sql
 CREATE INDEX dept_name_idx ON dept (name);
 ```
 
 **10. Create a synonym for the `EMPLOYEES` table**
+
 ```sql
 CREATE SYNONYM emp
 FOR employees;
