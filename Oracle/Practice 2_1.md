@@ -1,103 +1,94 @@
-# ផ្នែកទី ១: សំណួរទ្រឹស្តី (Questions 1 - 5)
+# Practice 1: Overview (Security & Privileges)
 
-១. តើត្រូវផ្តល់សិទ្ធិ (privilege) អ្វីខ្លះទៅកាន់ user ដើម្បីអាច log on ចូលទៅកាន់ Oracle server បាន? ហើយវាជាប្រភេទ system privilege ឬ object privilege?
+To complete question 6 and the subsequent questions, you need to connect to the database using iSQL*Plus or SQL Developer. To do this, launch one of them and use DBA (sys or system) or ORA1 accounts with user name and password provided by your instructor to log on to the database.
 
-**ចម្លើយ:** ត្រូវផ្តល់សិទ្ធិ `CREATE SESSION`។ វាជាប្រភេទ System privilege (ព្រោះវាជាសិទ្ធិទូទៅក្នុងការភ្ជាប់ទៅកាន់ database មិនមែនលើ object ជាក់លាក់ណាមួយឡើយ)។
+### Practice 1:
 
-២. តើត្រូវផ្តល់សិទ្ធិអ្វីខ្លះទៅកាន់ user ដើម្បីអាចបង្កើត tables បាន?
+**1. What privilege should a user be given to log on to the Oracle server? Is this a system or an object privilege?**
+- **Answer:** A user should be given the `CREATE SESSION` privilege. This is a **system privilege**.
 
-**ចម្លើយ:** ត្រូវផ្តល់សិទ្ធិ `CREATE TABLE` (និងជាទូទៅត្រូវការផ្តល់ទំហំផ្ទុកទិន្នន័យ `UNLIMITED TABLESPACE` ឬ quota លើ tablespace ផងដែរ ដើម្បីអាចបង្កើតបានជោគជ័យ)។
+**2. What privilege should a user be given to create tables?**
+- **Answer:** A user should be given the `CREATE TABLE` system privilege.
 
-៣. ប្រសិនបើបងបង្កើត table មួយ តើនរណាខ្លះដែលអាចបោះសិទ្ធិ (pass along privileges) នៅលើ table របស់បងទៅឱ្យ user ផ្សេងទៀតបាន?
+**3. If you create a table, who can pass along privileges to other users on your table?**
+- **Answer:** You (the owner of the table) and the DBA can pass along privileges. Also, anyone who has been granted privileges on the table with the `WITH GRANT OPTION`.
 
-**ចម្លើយ:** មានតែ រូបបងផ្ទាល់ (ម្ចាស់ table / Owner) និង DBA (Database Administrator) ប៉ុណ្ណោះ។ (លើកលែងតែបងបានផ្តល់សិទ្ធិទៅឱ្យនរណាម្នាក់ផ្សេងទៀតដោយភ្ជាប់ជាមួយឃ្លា `WITH GRANT OPTION`)។
+**4. You are the DBA. You are creating many users who require the same system privileges. What should you use to make your job easier?**
+- **Answer:** You should use a **Role**. You can create a role, grant the necessary system privileges to the role, and then grant the role to the users.
 
-៤. ក្នុងនាមជា DBA ប្រសិនបើបងចង់បង្កើត user ច្រើននាក់ដែលមានសិទ្ធិ (system privileges) ដូចៗគ្នា តើបងគួរប្រើប្រាស់អ្វីដើម្បីជួយឱ្យការងារនេះកាន់តែងាយស្រួល?
-
-**ចម្លើយ:** គួរប្រើប្រាស់ Role (បង្កើត Role មួយ រួចផ្តល់សិទ្ធិទៅឱ្យ Role នោះ បន្ទាប់មកយក Role នោះទៅផ្តល់ឱ្យ user ទាំងឡាយជាការស្រេច)។
-
-៥. តើត្រូវប្រើប្រាស់ Command អ្វីដើម្បីផ្លាស់ប្តូរលេខសម្ងាត់ (password) ផ្ទាល់ខ្លួន?
-
-**ចម្លើយ:** ប្រើ command: `ALTER USER user_name IDENTIFIED BY new_password;` (ឬប្រើ command ខ្លី `PASSWORD` នៅក្នុង SQL*Plus)។
-
-# ផ្នែកទី ២: កូដ SQL សម្រាប់អនុវត្ត (Questions 6 - 10)
-
-*ចំណាំ: ដើម្បីដំណើរការកូដខាងក្រោមនេះបាន បងត្រូវ Log in ចូលប្រើប្រាស់ account ជា DBA (sys ឬ system) ឬ account ORA1 ដូចដែលរូបភាពទី២ របស់បងបានបង្ហាញ។*
-
-### 6. Create a user, grant SELECT and INSERT, then revoke INSERT
-
+**5. What command do you use to change your password?**
+- **Answer:** The `ALTER USER` command (or the `PASSWORD` command in SQL*Plus).
 ```sql
--- កូដបង្កើត user ថ្មី (ឧទាហរណ៍ឈ្មោះ user1)
-CREATE USER user1 IDENTIFIED BY password123;
-GRANT CREATE SESSION TO user1; -- ផ្តល់សិទ្ធិឱ្យចូលប្រព័ន្ធបាន
+ALTER USER username IDENTIFIED BY new_password;
+```
 
--- ផ្តល់សិទ្ធិ SELECT និង INSERT លើ table Employees
+**6. Create a user, grant SELECT and INSERT permission on the Employees table to the user. Then, revoke INSERT permission on the Employees table from the user.**
+```sql
+-- Create user
+CREATE USER user1 IDENTIFIED BY password123;
+GRANT CREATE SESSION TO user1;
+
+-- Grant permissions
 GRANT SELECT, INSERT ON Employees TO user1;
 
--- ដកសិទ្ធិ INSERT ចេញវិញ
+-- Revoke INSERT permission
 REVOKE INSERT ON Employees FROM user1;
 ```
 
-### 7. Create a new table, a new role, grant SELECT to role, and grant role to user1
-
+**7. Create a new table, a new role, grant SELECT permission on the table to the role and grant the role to the user you have created in step 6.**
 ```sql
--- បង្កើត table ថ្មីមួយ
-CREATE TABLE new_test_table (
-    id NUMBER PRIMARY KEY,
-    name VARCHAR2(50)
+-- Create table
+CREATE TABLE test_table (
+  id NUMBER PRIMARY KEY,
+  name VARCHAR2(50)
 );
 
--- បង្កើត Role ថ្មីមួយ (ឧទាហរណ៍ឈ្មោះ test_role)
+-- Create role
 CREATE ROLE test_role;
 
--- ផ្តល់សិទ្ធិ SELECT លើ table ថ្មីទៅឱ្យ Role
-GRANT SELECT ON new_test_table TO test_role;
+-- Grant SELECT on table to role
+GRANT SELECT ON test_table TO test_role;
 
--- ផ្តល់ Role នោះទៅឱ្យ user1 (ដែលបានបង្កើតក្នុងជំហានទី ៦)
+-- Grant role to user
 GRANT test_role TO user1;
 ```
 
-### 8. Create a new user, a database role, grant SELECT on Departments to role, and grant role to user
-
+**8. Create a new user, a database role, grant SELECT permission on the Departments table to the role and grant the role to the user.**
 ```sql
--- បង្កើត user ថ្មីមួយទៀត (ឧទាហរណ៍ឈ្មោះ user2)
+-- Create user
 CREATE USER user2 IDENTIFIED BY password123;
 GRANT CREATE SESSION TO user2;
 
--- បង្កើត Role ថ្មីមួយទៀត (ឧទាហរណ៍ឈ្មោះ dept_role)
+-- Create role
 CREATE ROLE dept_role;
 
--- ផ្តល់សិទ្ធិ SELECT លើ table Departments ទៅឱ្យ Role
+-- Grant SELECT on Departments to role
 GRANT SELECT ON Departments TO dept_role;
 
--- ផ្តល់ Role នោះទៅឱ្យ user2
+-- Grant role to user
 GRANT dept_role TO user2;
 ```
 
-### 9. Create a view to restrict access to sensitive columns and grant SELECT to user2
-(ឧបមាថា table Employees មាន column សំខាន់ៗដូចជា id, name, និង salary។ យើងបង្កើត View បង្ហាញតែ id និង name ដើម្បីលាក់ salary)
-
+**9. Create a view to restrict access to sensitive columns in the Employees table and grant SELECT permission on the view to the user you have created in step 8.**
 ```sql
--- បង្កើត View ឈ្មោះ emp_public_view
-CREATE VIEW emp_public_view AS 
-SELECT employee_id, first_name, last_name 
+-- Create view (excluding sensitive columns like SALARY or COMMISSION_PCT)
+CREATE VIEW emp_public_view AS
+SELECT employee_id, first_name, last_name, email, department_id
 FROM Employees;
 
--- ផ្តល់សិទ្ធិ SELECT លើ View នេះទៅឱ្យ user2 (ដែលបង្កើតក្នុងជំហានទី ៨)
+-- Grant SELECT on view to user2
 GRANT SELECT ON emp_public_view TO user2;
 ```
 
-### 10. Create a user, grant and deny DELETE and UPDATE permission on Ora1.Departments
-(ចំណាំ៖ នៅក្នុង Oracle មិនមាន command "DENY" ផ្ទាល់ដូច SQL Server ទេ ការបដិសេធសិទ្ធិគឺប្រើប្រាស់ការមិនផ្តល់ឱ្យ ឬប្រើប្រាស់ REVOKE ប្រសិនបើធ្លាប់ផ្តល់ឱ្យ)
-
+**10. Create a user, grant and deny DELETE and UPDATE permission on the Ora1.Departments table to/from the user.**
 ```sql
--- បង្កើត user ថ្មី (ឧទាហរណ៍ឈ្មោះ user3)
+-- Create user
 CREATE USER user3 IDENTIFIED BY password123;
 GRANT CREATE SESSION TO user3;
 
--- ផ្តល់សិទ្ធិ DELETE និង UPDATE លើ table Ora1.Departments
+-- Grant DELETE and UPDATE permission
 GRANT DELETE, UPDATE ON Ora1.Departments TO user3;
 
--- ដកសិទ្ធិ (Deny/Revoke) ទាំងពីរនោះចេញវិញ
+-- Revoke (deny) DELETE and UPDATE permission
 REVOKE DELETE, UPDATE ON Ora1.Departments FROM user3;
 ```
