@@ -35,20 +35,19 @@ Composer version 2.10.2 2026-07-01 11:24:45
 
 ## 📌 Step 2 — Create Laravel 13 Project
 
-**Assignment Project Name:** `SOVANARASV7`
 
 ### 2.1 បង្កើត Project ថ្មី (Create Project)
 រត់ Command ខាងក្រោមដើម្បីបង្កើត Laravel 13 Project:
 
 ```bash
-composer create-project laravel/laravel:^13.0 SOVANARASV7
+composer create-project laravel/laravel nameproject
 ```
 
 ---
 
 ### 2.2 ចូលទៅកាន់ Project Folder
 ```bash
-cd SOVANARASV7
+cd nameproject
 ```
 
 ---
@@ -57,8 +56,48 @@ cd SOVANARASV7
 ```bash
 php artisan --version
 ```
+> **លទ្ធផលដែលគួរបង្ហាញ (Expected Output): Laravel Framework 13.x.x**។
+
+---
+
+## 📌 Step 3 — Project Structure & Run Server
+
+### 3.1 រចនាសម្ព័ន្ធ Project (Project Structure)
+បន្ទាប់ពីបង្កើតរួច រចនាសម្ព័ន្ធ Folder នៃ Laravel Project នឹងមានទម្រង់ដូចខាងក្រោម៖
+
+```text
+SOVANARASV7/
+├── app/
+├── bootstrap/
+├── config/
+├── database/
+├── public/
+├── resources/
+├── routes/
+├── storage/
+├── .env
+├── artisan
+└── composer.json
+```
+
+---
+
+### 3.2 ដំណើរការ Development Server (Run Server)
+រត់ Command ខាងក្រោមដើម្បី Start Laravel Development Server:
+
+```bash
+php artisan serve
+```
 
 **លទ្ធផលដែលគួរបង្ហាញ (Expected Output):**
 ```text
-Laravel Framework 13.x.x
+Server running on [http://127.0.0.1:8000]
 ```
+
+---
+
+### 3.3 ត្រួតពិនិត្យលើ Browser (Test in Browser)
+1. បើក Web Browser (Google Chrome, Edge, ...)
+2. ចូលទៅកាន់តំណភ្ជាប់: `http://127.0.0.1:8000`
+3. ប្រសិនបើទំព័រ **Laravel Page** បង្ហាញ មានន័យថា: **✅ Laravel project ដំណើរការបានជោគជ័យ**។
+
