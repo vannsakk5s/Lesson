@@ -66,7 +66,7 @@ php artisan --version
 បន្ទាប់ពីបង្កើតរួច រចនាសម្ព័ន្ធ Folder នៃ Laravel Project នឹងមានទម្រង់ដូចខាងក្រោម៖
 
 ```text
-SOVANARASV7/
+nameproject/
 ├── app/
 ├── bootstrap/
 ├── config/
