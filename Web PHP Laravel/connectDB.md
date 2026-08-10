@@ -1,0 +1,75 @@
+# 🔗 របៀបភ្ជាប់ Laravel 13 ទៅកាន់ MySQL Database (Connect Laravel 13 to MySQL)
+
+Laravel កំណត់ការភ្ជាប់ទៅកាន់ Database តាមរយៈឯកសារ **`.env`** ដូចជា Database Name, Host, Port, Username និង Password។
+
+---
+
+## 📌 Step 4 — បង្កើត Database ក្នុង dbForge
+
+បើកកម្មវិធី **dbForge Studio for MySQL** ហើយធ្វើតាមវិធីមួយក្នុងចំណោមពីរខាងក្រោម៖
+
+### ជម្រើសទី ១: ប្រើប្រាស់ SQL Command
+```sql
+CREATE DATABASE sovanarasv7;
+```
+
+### ជម្រើសទី ២: ប្រើប្រាស់ GUI
+1. ចុច Right-click លើ **Databases**
+2. ជ្រើសរើស **New Database**
+3. វាយឈ្មោះ Database: `sovanarasv7`
+4. ចុច **Apply changes** ឬ **OK**
+
+---
+
+## 📌 Step 5 — កែប្រែឯកសារ .env
+
+ចូលទៅកាន់ Root នៃ Project របស់អ្នក (`SOVANARASV7/.env`) ហើយស្វែងរកផ្នែកកំណត់តម្លៃ Database Configuration:
+
+### 5.1 ធ្វើបច្ចុប្បន្នភាព Configuration
+```env
+DB_CONNECTION=mysql
+DB_HOST=127.0.0.1
+DB_PORT=3306
+DB_DATABASE=sovanarasv7
+DB_USERNAME=root
+DB_PASSWORD=
+```
+
+> **ចំណាំ:** ប្រសិនបើ MySQL root របស់អ្នកមាន Password សូមកំណត់បន្ថែម៖
+> ```env
+> DB_PASSWORD=your_password
+> ```
+> *(ឧទាហរណ៍: `DB_PASSWORD=123456`)*
+
+### 5.2 Clear Configuration Cache
+បន្ទាប់ពីកែប្រែឯកសារ `.env` រួច សូមរត់ Command ខាងក្រោមដើម្បី Clear Cache:
+
+```bash
+php artisan config:clear
+```
+
+---
+
+## 📌 Step 6 — ធ្វើតេស្តការភ្ជាប់ Database (Test Database Connection)
+
+រត់ Migration Command ដើម្បីបង្កើត Tables ដំបូងទៅក្នុង Database:
+
+```bash
+php artisan migrate
+```
+
+### លទ្ធផលប្រសិនបើភ្ជាប់បានជោគជ័យ (Expected Output):
+```text
+INFO  Running migrations.
+
+0001_01_01_000000_create_users_table ........ DONE
+0001_01_01_000001_create_cache_table ......... DONE
+0001_01_01_000002_create_jobs_table .......... DONE
+```
+
+---
+
+## 💡 ចំណេះដឹងបន្ថែម (Additional Knowledge)
+
+- **`up()` Method:** ប្រើសម្រាប់បង្កើតថ្មី ឬកែប្រែ Table ក្នុង Database (Create/Modify Database Tables)។
+- **`down()` Method:** ប្រើសម្រាប់លុប ឬត្រឡប់ការផ្លាស់ប្តូរមកវិញ (Reverse Migration / Rollback)។
