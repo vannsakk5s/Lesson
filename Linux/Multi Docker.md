@@ -269,16 +269,29 @@ Save:
 
 ---
 
-### Step 13 — Upload Websites from Windows → EC2
-Command នេះ run នៅលើ **Windows PowerShell**:
-```powershell
-scp -i mykey.pem -r site1 site2 site3 ubuntu@YOUR_EC2_IP:/home/ubuntu/
-```
+### Step 13 — Upload Websites from Windows → EC2 (ប្រើ FileZilla)
 
-**Example:**
-```powershell
-scp -i mykey.pem -r site1 site2 site3 ubuntu@54.179.20.10:/home/ubuntu/
-```
+**របៀបភ្ជាប់ FileZilla ទៅកាន់ EC2 តាម SFTP៖**
+1. បើកកម្មវិធី **FileZilla**
+2. ចូលទៅ **File** → **Site Manager** (ឬចុច `Ctrl + S`) រួចចុច **New Site** (ដាក់ឈ្មោះឧទាហរណ៍៖ `EC2-Server`)
+3. កំណត់ Settings ដូចខាងក្រោម៖
+   - **Protocol**: `SFTP - SSH File Transfer Protocol`
+   - **Host**: ដាក់ Public IP របស់ EC2 (ឧទាហរណ៍៖ `54.179.20.10`)
+   - **Port**: `22`
+   - **Logon Type**: `Key file`
+   - **User**: `ubuntu`
+   - **Key file**: ចុច **Browse...** រួចជ្រើសរើសយក file `mykey.pem`
+4. ចុច **Connect** (បើមានផ្ទាំង pop-up "Unknown host key" សូមចុច **OK**)
+
+**Upload Folders ទៅកាន់ EC2៖**
+- នៅផ្ទាំងខាងឆ្វេង (**Local site** / លើ Windows): រកមើល Folder `site1`, `site2`, `site3`
+- នៅផ្ទាំងខាងស្ដាំ (**Remote site** / លើ EC2): ចូលទៅកាន់ `/home/ubuntu`
+- **Drag & Drop** (អូសទម្លាក់) ឬ Right-click លើ Folders ទាំង ៣ រួចយក **Upload** ចូលទៅក្នុង `/home/ubuntu/`
+
+> **(ជម្រើសបន្ថែម) ប្រសិនបើចង់ប្រើ SCP តាម Windows PowerShell វិញ៖**
+> ```powershell
+> scp -i mykey.pem -r site1 site2 site3 ubuntu@YOUR_EC2_IP:/home/ubuntu/
+> ```
 
 ---
 
