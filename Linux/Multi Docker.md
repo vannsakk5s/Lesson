@@ -190,19 +190,17 @@ Welcome to nginx!
 
 ---
 
-### Step 12 — Create Website Folders on Windows
-នៅលើ **Windows**:
-```text
-project/
-├── site1/
-│   └── index.html
-├── site2/
-│   └── index.html
-└── site3/
-    └── index.html
+### Step 12 — Create Website Folders
+```bash
+mkdir -p site1 site2 site3
 ```
 
-**site1/index.html**
+**Site 1:**
+```bash
+nano site1/index.html
+```
+
+Paste:
 ```html
 <!DOCTYPE html>
 <html>
@@ -216,7 +214,17 @@ project/
 </html>
 ```
 
-**site2/index.html**
+Save:
+- `Ctrl + O`
+- `Enter`
+- `Ctrl + X`
+
+**Site 2:**
+```bash
+nano site2/index.html
+```
+
+Paste:
 ```html
 <!DOCTYPE html>
 <html>
@@ -230,7 +238,17 @@ project/
 </html>
 ```
 
-**site3/index.html**
+Save:
+- `Ctrl + O`
+- `Enter`
+- `Ctrl + X`
+
+**Site 3:**
+```bash
+nano site3/index.html
+```
+
+Paste:
 ```html
 <!DOCTYPE html>
 <html>
@@ -243,6 +261,11 @@ project/
 </body>
 </html>
 ```
+
+Save:
+- `Ctrl + O`
+- `Enter`
+- `Ctrl + X`
 
 ---
 
