@@ -1,0 +1,292 @@
+<!DOCTYPE html>
+<html lang="en" class="dark">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Web Node 3 - Admin Control Center</title>
+  
+  <!-- Google Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+  
+  <!-- Tailwind CSS CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      darkMode: 'class',
+      theme: {
+        extend: {
+          fontFamily: {
+            sans: ['"Plus Jakarta Sans"', 'sans-serif'],
+            mono: ['"JetBrains Mono"', 'monospace'],
+          },
+          colors: {
+            brand: {
+              400: '#fbbf24',
+              500: '#f59e0b',
+              600: '#d97706',
+            }
+          }
+        }
+      }
+    }
+  </script>
+
+  <!-- Lucide Icons -->
+  <script src="https://unpkg.com/lucide@latest"></script>
+  
+  <style>
+    .bg-radial-amber {
+      background: radial-gradient(circle at 50% 0%, rgba(245, 158, 11, 0.15) 0%, rgba(15, 23, 42, 0) 70%);
+    }
+  </style>
+</head>
+<body class="bg-slate-950 text-slate-100 min-h-screen font-sans antialiased selection:bg-amber-500 selection:text-white flex flex-col justify-between relative overflow-x-hidden">
+  
+  <!-- Radial Glow -->
+  <div class="absolute inset-0 bg-radial-amber pointer-events-none"></div>
+
+  <!-- Header -->
+  <header class="relative z-10 border-b border-slate-800/80 bg-slate-900/60 backdrop-blur-md sticky top-0">
+    <div class="max-w-5xl mx-auto px-4 sm:px-6 h-16 flex items-center justify-between">
+      <div class="flex items-center gap-3">
+        <div class="h-9 w-9 rounded-xl bg-gradient-to-tr from-amber-500 to-orange-500 flex items-center justify-center shadow-lg shadow-amber-500/20 text-white">
+          <i data-lucide="shield-alert" class="w-5 h-5"></i>
+        </div>
+        <div>
+          <span class="font-bold text-base tracking-tight text-white">Web Node 03</span>
+          <span class="hidden sm:inline-block ml-2 text-xs px-2 py-0.5 rounded-full bg-amber-500/10 text-amber-400 border border-amber-500/20 font-medium">Container: admin</span>
+        </div>
+      </div>
+
+      <!-- Quick Nav -->
+      <div class="flex items-center gap-2">
+        <div class="hidden sm:flex items-center gap-1.5 text-xs bg-slate-800/80 border border-slate-700/60 rounded-lg p-1">
+          <span class="px-2.5 py-1 text-slate-400 hover:text-slate-200 transition">Web 1 (:7001)</span>
+          <span class="px-2.5 py-1 text-slate-400 hover:text-slate-200 transition">Web 2 (:7002)</span>
+          <span class="px-2.5 py-1 rounded bg-amber-600 text-white font-semibold">Web 3 (:7003)</span>
+        </div>
+        <button id="lockToggleBtn" class="p-2 rounded-lg bg-slate-800/80 hover:bg-slate-700 text-slate-300 hover:text-white transition border border-slate-700/60" title="Security Status">
+          <i data-lucide="lock" class="w-4 h-4 text-amber-400"></i>
+        </button>
+      </div>
+    </div>
+  </header>
+
+  <!-- Main Content -->
+  <main class="relative z-10 flex-1 max-w-5xl mx-auto px-4 sm:px-6 py-10 w-full flex flex-col justify-center">
+    
+    <!-- Hero / Admin Info -->
+    <div class="text-center max-w-2xl mx-auto mb-10">
+      <div class="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-amber-500/10 border border-amber-500/30 text-amber-400 text-xs font-semibold mb-4">
+        <span class="w-2 h-2 rounded-full bg-amber-400 animate-ping"></span>
+        <span class="w-2 h-2 rounded-full bg-amber-500 -ml-3"></span>
+        Root Administrator Access
+      </div>
+      <h1 class="text-3xl sm:text-5xl font-extrabold tracking-tight text-white mb-3">
+        Admin Portal <span class="text-transparent bg-clip-text bg-gradient-to-r from-amber-400 via-orange-400 to-rose-400">Node #3</span>
+      </h1>
+      <p class="text-slate-400 text-sm sm:text-base leading-relaxed">
+        Centralized operations command console for container orchestration, security monitoring, and cluster maintenance.
+      </p>
+    </div>
+
+    <!-- Metrics Cards Grid -->
+    <div class="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
+      <!-- Port -->
+      <div class="bg-slate-900/70 border border-slate-800 rounded-2xl p-4 sm:p-5 backdrop-blur-sm hover:border-slate-700 transition">
+        <div class="flex items-center justify-between text-slate-400 mb-2">
+          <span class="text-xs font-medium uppercase tracking-wider">Access Port</span>
+          <i data-lucide="key" class="w-4 h-4 text-amber-400"></i>
+        </div>
+        <div class="text-2xl font-bold text-white tracking-tight">7003</div>
+        <p class="text-xs text-amber-400 mt-1 font-medium">Mapped to Container :80</p>
+      </div>
+
+      <!-- CPU Usage -->
+      <div class="bg-slate-900/70 border border-slate-800 rounded-2xl p-4 sm:p-5 backdrop-blur-sm hover:border-slate-700 transition">
+        <div class="flex items-center justify-between text-slate-400 mb-2">
+          <span class="text-xs font-medium uppercase tracking-wider">Container CPU</span>
+          <i data-lucide="activity" class="w-4 h-4 text-rose-400"></i>
+        </div>
+        <div id="cpuUsageVal" class="text-2xl font-bold text-white tracking-tight">14.2%</div>
+        <div class="w-full bg-slate-800 h-1.5 rounded-full mt-2 overflow-hidden">
+          <div id="cpuBar" class="bg-gradient-to-r from-amber-500 to-rose-500 h-full w-[14%] transition-all duration-500"></div>
+        </div>
+      </div>
+
+      <!-- Memory Usage -->
+      <div class="bg-slate-900/70 border border-slate-800 rounded-2xl p-4 sm:p-5 backdrop-blur-sm hover:border-slate-700 transition">
+        <div class="flex items-center justify-between text-slate-400 mb-2">
+          <span class="text-xs font-medium uppercase tracking-wider">RAM Allocation</span>
+          <i data-lucide="hard-drive" class="w-4 h-4 text-orange-400"></i>
+        </div>
+        <div class="text-2xl font-bold text-white tracking-tight">128 MB</div>
+        <p class="text-xs text-slate-400 mt-1">Limit: 512 MB (25%)</p>
+      </div>
+
+      <!-- Active Sessions -->
+      <div class="bg-slate-900/70 border border-slate-800 rounded-2xl p-4 sm:p-5 backdrop-blur-sm hover:border-slate-700 transition">
+        <div class="flex items-center justify-between text-slate-400 mb-2">
+          <span class="text-xs font-medium uppercase tracking-wider">Admin Role</span>
+          <i data-lucide="user-check" class="w-4 h-4 text-emerald-400"></i>
+        </div>
+        <div class="text-2xl font-bold text-white tracking-tight">SuperUser</div>
+        <p class="text-xs text-emerald-400 mt-1 font-medium">Session: Encrypted TLS</p>
+      </div>
+    </div>
+
+    <!-- Management Action Controls -->
+    <div class="bg-slate-900/80 border border-slate-800/90 rounded-2xl p-5 sm:p-6 backdrop-blur-md shadow-xl">
+      <div class="pb-4 border-b border-slate-800 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+        <div>
+          <h2 class="text-base font-bold text-white flex items-center gap-2">
+            <i data-lucide="sliders" class="w-4 h-4 text-amber-400"></i>
+            Container Management Console
+          </h2>
+          <p class="text-xs text-slate-400 mt-0.5">Execute administrative operations and maintenance tasks on Container #3.</p>
+        </div>
+        <span class="text-[11px] font-mono text-amber-400/90 px-2.5 py-1 rounded-lg bg-amber-500/10 border border-amber-500/20 w-fit">
+          Sudo: Active
+        </span>
+      </div>
+
+      <!-- Action Buttons Grid -->
+      <div class="grid grid-cols-1 sm:grid-cols-3 gap-3 mt-4">
+        <!-- Action 1: Restart Container -->
+        <button id="restartBtn" class="flex flex-col items-start p-4 rounded-xl bg-slate-800/70 hover:bg-slate-800 border border-slate-700 hover:border-amber-500/50 transition group text-left">
+          <div class="flex items-center justify-between w-full mb-2">
+            <div class="p-2 rounded-lg bg-amber-500/10 text-amber-400 group-hover:bg-amber-500 group-hover:text-slate-950 transition">
+              <i data-lucide="refresh-cw" class="w-4 h-4"></i>
+            </div>
+            <span class="text-[10px] uppercase font-mono text-slate-500">Service</span>
+          </div>
+          <span class="text-sm font-semibold text-white">Restart Node</span>
+          <span class="text-xs text-slate-400 mt-1">Gracefully reload container processes.</span>
+        </button>
+
+        <!-- Action 2: Purge Cache -->
+        <button id="purgeCacheBtn" class="flex flex-col items-start p-4 rounded-xl bg-slate-800/70 hover:bg-slate-800 border border-slate-700 hover:border-amber-500/50 transition group text-left">
+          <div class="flex items-center justify-between w-full mb-2">
+            <div class="p-2 rounded-lg bg-orange-500/10 text-orange-400 group-hover:bg-orange-500 group-hover:text-slate-950 transition">
+              <i data-lucide="trash-2" class="w-4 h-4"></i>
+            </div>
+            <span class="text-[10px] uppercase font-mono text-slate-500">Memory</span>
+          </div>
+          <span class="text-sm font-semibold text-white">Flush Cache</span>
+          <span class="text-xs text-slate-400 mt-1">Clear Redis and proxy query caches.</span>
+        </button>
+
+        <!-- Action 3: Generate Audit Report -->
+        <button id="auditBtn" class="flex flex-col items-start p-4 rounded-xl bg-slate-800/70 hover:bg-slate-800 border border-slate-700 hover:border-amber-500/50 transition group text-left">
+          <div class="flex items-center justify-between w-full mb-2">
+            <div class="p-2 rounded-lg bg-rose-500/10 text-rose-400 group-hover:bg-rose-500 group-hover:text-slate-950 transition">
+              <i data-lucide="file-text" class="w-4 h-4"></i>
+            </div>
+            <span class="text-[10px] uppercase font-mono text-slate-500">Security</span>
+          </div>
+          <span class="text-sm font-semibold text-white">Security Audit</span>
+          <span class="text-xs text-slate-400 mt-1">Run Docker security scan and inspect.</span>
+        </button>
+      </div>
+
+      <!-- Action Status Feed -->
+      <div class="mt-4 pt-4 border-t border-slate-800 flex items-center justify-between text-xs text-slate-400">
+        <span class="flex items-center gap-2">
+          <i data-lucide="check-circle-2" class="w-3.5 h-3.5 text-emerald-400"></i>
+          Cluster Status: All 3 Containers Synced
+        </span>
+        <span id="lastActionTime" class="font-mono text-[11px] text-slate-500">Last event: Idle</span>
+      </div>
+    </div>
+
+  </main>
+
+  <!-- Footer -->
+  <footer class="relative z-10 border-t border-slate-800/80 py-4 text-center text-xs text-slate-500">
+    <div class="max-w-5xl mx-auto px-4 flex flex-col sm:flex-row items-center justify-between gap-2">
+      <p>Multi-Container Docker Environment &bull; Node 3</p>
+      <p class="font-mono text-slate-400">Service: <span class="text-amber-400">Cluster Administrator</span></p>
+    </div>
+  </footer>
+
+  <!-- Toast Notification -->
+  <div id="toast" class="fixed bottom-5 right-5 z-50 transform translate-y-16 opacity-0 pointer-events-none transition-all duration-300 ease-out bg-amber-600 text-slate-950 font-semibold px-4 py-2.5 rounded-xl shadow-lg shadow-amber-600/30 text-xs flex items-center gap-2">
+    <i data-lucide="bell" class="w-4 h-4"></i>
+    <span id="toastMsg">Action executed successfully</span>
+  </div>
+
+  <!-- JavaScript -->
+  <script>
+    lucide.createIcons();
+
+    const restartBtn = document.getElementById('restartBtn');
+    const purgeCacheBtn = document.getElementById('purgeCacheBtn');
+    const auditBtn = document.getElementById('auditBtn');
+    const cpuUsageVal = document.getElementById('cpuUsageVal');
+    const cpuBar = document.getElementById('cpuBar');
+    const lastActionTime = document.getElementById('lastActionTime');
+    const toast = document.getElementById('toast');
+    const toastMsg = document.getElementById('toastMsg');
+    const lockToggleBtn = document.getElementById('lockToggleBtn');
+
+    function showToast(message) {
+      toastMsg.textContent = message;
+      toast.classList.remove('translate-y-16', 'opacity-0', 'pointer-events-none');
+      toast.classList.add('translate-y-0', 'opacity-100');
+      setTimeout(() => {
+        toast.classList.remove('translate-y-0', 'opacity-100');
+        toast.classList.add('translate-y-16', 'opacity-0', 'pointer-events-none');
+      }, 2500);
+    }
+
+    function updateLastAction(actionName) {
+      const now = new Date();
+      lastActionTime.textContent = `Last event: ${actionName} at ${now.toLocaleTimeString()}`;
+    }
+
+    // CPU fluctuation simulation
+    setInterval(() => {
+      const cpu = (Math.random() * 10 + 12).toFixed(1);
+      cpuUsageVal.textContent = `${cpu}%`;
+      cpuBar.style.width = `${cpu}%`;
+    }, 4000);
+
+    // Restart Action
+    restartBtn.addEventListener('click', () => {
+      restartBtn.classList.add('opacity-50', 'pointer-events-none');
+      showToast('Restarting Container "admin"...');
+      setTimeout(() => {
+        restartBtn.classList.remove('opacity-50', 'pointer-events-none');
+        updateLastAction('Node 3 Restart');
+        showToast('Node 3 reloaded and healthy (Port 7003)');
+      }, 1200);
+    });
+
+    // Purge Cache Action
+    purgeCacheBtn.addEventListener('click', () => {
+      purgeCacheBtn.classList.add('opacity-50', 'pointer-events-none');
+      showToast('Flushing container memory cache...');
+      setTimeout(() => {
+        purgeCacheBtn.classList.remove('opacity-50', 'pointer-events-none');
+        updateLastAction('Cache Flushed');
+        showToast('Cache cleared successfully (Freed 64MB)');
+      }, 800);
+    });
+
+    // Security Audit Action
+    auditBtn.addEventListener('click', () => {
+      showToast('Running vulnerability scan...');
+      setTimeout(() => {
+        updateLastAction('Security Audit Passed');
+        showToast('Audit Complete: 0 vulnerabilities found');
+      }, 1000);
+    });
+
+    lockToggleBtn.addEventListener('click', () => {
+      showToast('SuperUser Session: Secure & Verified');
+    });
+  </script>
+</body>
+</html>
