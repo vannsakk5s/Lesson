@@ -4,15 +4,15 @@ Route 53 បម្លែង domain ទៅ IP របស់ EC2។ បន្ទា
 
 | URL | Service នៅក្នុង EC2 |
 | :--- | :--- |
-| `http://site.com/` | Frontend → `127.0.0.1:6000` |
-| `http://site.com/api/` | API → `127.0.0.1:6001` |
-| `http://site.com/admin/` | Admin → `127.0.0.1:6002` |
+| `http://codebyme.cyou/` | Frontend → `127.0.0.1:6000` |
+| `http://codebyme.cyou/api/` | API → `127.0.0.1:6001` |
+| `http://codebyme.cyou/admin/` | Admin → `127.0.0.1:6002` |
 
 > [!NOTE]
-> នៅក្នុង commands ខាងក្រោម៖
-> - ប្តូរ `site.com` ទៅ domain ដែលអ្នកកាន់កាប់។
-> - ប្តូរ `YOUR_ELASTIC_IP` ទៅ IP របស់ EC2។
-> - ជំហានបង្កើត services គឺជា លំហាត់ demo។ បើអ្នកមាន applications ដំណើរការលើ ports ទាំងនេះរួចហើយ សូមរំលងជំហានទី 6–7។
+> នៅក្នុងមគ្គុទ្ទេសក៍នេះ៖
+> - Domain: **`codebyme.cyou`** និង **`www.codebyme.cyou`**
+> - Elastic IP: **`54.252.177.166`**
+> - ជំហានបង្កើត services គឺជាលំហាត់ demo។ បើអ្នកមាន applications ដំណើរការលើ ports ទាំងនេះរួចហើយ សូមរំលងជំហានទី 6–7។
 
 ---
 
@@ -29,7 +29,7 @@ Elastic IP រក្សា IP ឱ្យនៅដដែលពេល stop/start EC
 1. ចូល **EC2** → **Elastic IP addresses**។
 2. ចុច **Allocate Elastic IP address**។
 3. ចុច **Allocate**។
-4. ជ្រើស IP ដែលបានបង្កើត។
+4. ជ្រើស IP ដែលបានបង្កើត (ឧ. `54.252.177.166`)។
 5. ចុច **Actions** → **Associate Elastic IP address**។
 6. ជ្រើស instance របស់អ្នក។
 7. ចុច **Associate**។
@@ -60,48 +60,57 @@ Elastic IP រក្សា IP ឱ្យនៅដដែលពេល stop/start EC
 
 បើមិនទាន់មាន Hosted Zone៖
 1. ចុច **Hosted zones** → **Create hosted zone**។
-2. Domain name: domain របស់អ្នក ឧទាហរណ៍ `site.com`។
+2. Domain name: `codebyme.cyou`
 3. Type: **Public hosted zone**។
 4. ចុច **Create hosted zone**។
 
-បន្ទាប់មក បើក Hosted Zone → **Create record** ហើយបង្កើត៖
+---
 
-| Setting | Domain ដើម | www |
-| :--- | :--- | :--- |
-| **Record name** | ទុកទទេ | `www` |
-| **Record type** | A | A |
-| **Value** | Elastic IP របស់ EC2 | Elastic IP ដូចគ្នា |
-| **Alias** | Off | Off |
-| **TTL** | 300 | 300 |
-| **Routing policy** | Simple | Simple |
+### កំណត់ត្រា Records ជាក់ស្តែងក្នុង Route 53 (Actual Route 53 Records)
 
-A record ចង្អុល domain ទៅ IPv4 របស់ EC2។ [Amazon Route 53](https://docs.aws.amazon.com/Route53/latest/DeveloperGuide/routing-to-ec2-instance.html?utm_source=chatgpt.com)
+បន្ទាប់ពីបង្កើត Hosted Zone រួច AWS នឹងផ្តល់ NS និង SOA ដោយស្វ័យប្រវត្តិ។ អ្នកគ្រាន់តែចុច **Create record** បន្ថែម Records សម្រាប់ Domain ដើម និង `www`៖
 
-### បើ domain ទិញពី provider ផ្សេង៖
+| Record name | Type | Routing | Alias | Value / Route traffic to | TTL (seconds) | ការពន្យល់ |
+| :--- | :---: | :---: | :---: | :--- | :---: | :--- |
+| **`codebyme.cyou`** | **A** | Simple | No | `54.252.177.166` (Elastic IP) | `3600` | ចង្អុល Domain ដើមទៅ IP របស់ EC2 |
+| **`www.codebyme.cyou`** | **CNAME** | Simple | No | `codebyme.cyou` | `3600` | ចង្អុល `www` ទៅ Domain ដើម |
+| **`codebyme.cyou`** | **NS** | Simple | No | `ns-1403.awsdns-47.org.`<br>`ns-1888.awsdns-44.co.uk.`<br>`ns-839.awsdns-40.net.`<br>`ns-199.awsdns-24.com.` | `172800` | Nameservers សម្រាប់យកទៅដាក់នៅកន្លែងទិញ Domain |
+| **`codebyme.cyou`** | **SOA** | Simple | No | `ns-1403.awsdns-47.org. ...` | `900` | Route 53 បង្កើតដោយស្វ័យប្រវត្តិ |
+
+> [!TIP]
+> **ជម្រើសសម្រាប់ `www` Record:**
+> - **វិធីទី 1 (CNAME - ដូចក្នុងរូបភាព):** បង្កើត Record name `www` ប្រភេទ **CNAME** ហើយដាក់ Value `codebyme.cyou`។ វិធីនេះល្អព្រោះពេលប្តូរ IP នៅថ្ងៃក្រោយ អ្នកគ្រាន់តែកែតែ A Record មួយកន្លែងគឺរួចរាល់។
+> - **វិធីទី 2 (A Record):** បង្កើត Record name `www` ប្រភេទ **A** ហើយដាក់ Value ជា Elastic IP (`54.252.177.166`) ដូច Domain ដើម។
+
+---
+
+### បើ domain ទិញពី provider ផ្សេង (Namecheap, GoDaddy, Hostinger, etc.)៖
 1. ក្នុង Hosted Zone រក record ប្រភេទ **NS**។
-2. Copy nameservers ទាំង 4 ដែល Route 53 ផ្តល់ឱ្យ។
+2. Copy nameservers ទាំង 4 ដែល Route 53 ផ្តល់ឱ្យ (`ns-1403.awsdns-47.org.`, `ns-1888.awsdns-44.co.uk.`, etc.)។
 3. ចូល dashboard របស់អ្នកលក់ domain។
 4. បើក **Nameservers** → **Custom nameservers**។
 5. បញ្ចូល nameservers ទាំង 4 ហើយ Save។
 
-នេះជាជំហានឱ្យ domain ប្រើ Route 53 ជា DNS provider។ បើ domain មាន email ឬ records ផ្សេងរួចហើយ សូមចម្លង records ទាំងនោះទៅ Hosted Zone ថ្មីមុនប្តូរ nameservers។ [Amazon Route 53](https://docs.aws.amazon.com/Route53/latest/DeveloperGuide/dns-configuring-new-domain.html?utm_source=chatgpt.com)
+នេះជាជំហានឱ្យ domain ប្រើ Route 53 ជា DNS provider។ [Amazon Route 53](https://docs.aws.amazon.com/Route53/latest/DeveloperGuide/dns-configuring-new-domain.html?utm_source=chatgpt.com)
 
 > [!WARNING]
-> មិនត្រូវបង្កើត DNS records សម្រាប់ `site.com/api` ឬ `site.com/admin` ទេ។ ទាំងនេះជា URL paths ដែលយើងនឹងកំណត់ក្នុង Nginx។
+> មិនត្រូវបង្កើត DNS records សម្រាប់ `codebyme.cyou/api` ឬ `codebyme.cyou/admin` ទេ។ ទាំងនេះជា URL paths ដែលយើងនឹងកំណត់ក្នុង Nginx។
 
-### សាកល្បងនៅ Windows PowerShell៖
+---
+
+### សាកល្បង DNS នៅ Windows PowerShell៖
 ```powershell
-nslookup site.com
-nslookup www.site.com
+nslookup codebyme.cyou
+nslookup www.codebyme.cyou
 ```
-លទ្ធផលត្រូវបង្ហាញ Elastic IP របស់អ្នក។ ការប្តូរ nameservers និង DNS cache អាចត្រូវការពេលមុននឹងឃើញលទ្ធផលថ្មី។
+លទ្ធផលត្រូវបង្ហាញ IP របស់ EC2 (`54.252.177.166`)។
 
 ---
 
 ## 5. SSH ចូល EC2 ហើយពិនិត្យ Nginx
 នៅ PowerShell ក្នុង folder ដែលមាន SSH key៖
 ```powershell
-ssh -i .\your-key.pem ubuntu@YOUR_ELASTIC_IP
+ssh -i .\your-key.pem ubuntu@54.252.177.166
 ```
 
 Commands បន្ទាប់ពីនេះរត់ នៅក្នុង EC2៖
@@ -142,14 +151,14 @@ sudo apt install -y python3
 
 បង្កើត folders៖
 ```bash
-sudo mkdir -p /var/www/proxy-lab/6000
-sudo mkdir -p /var/www/proxy-lab/6001
-sudo mkdir -p /var/www/proxy-lab/6002
+sudo mkdir -p /var/www/proxy-lab/home
+sudo mkdir -p /var/www/proxy-lab/api
+sudo mkdir -p /var/www/proxy-lab/admin
 ```
 
 បង្កើត Frontend page：
 ```bash
-sudo tee /var/www/proxy-lab/6000/index.html > /dev/null <<'EOF'
+sudo tee /var/www/proxy-lab/home/index.html > /dev/null <<'EOF'
 <!DOCTYPE html>
 <html>
 <head><title>Frontend</title></head>
@@ -165,7 +174,7 @@ EOF
 
 បង្កើត API demo page៖
 ```bash
-sudo tee /var/www/proxy-lab/6001/index.html > /dev/null <<'EOF'
+sudo tee /var/www/proxy-lab/api/index.html > /dev/null <<'EOF'
 <!DOCTYPE html>
 <html>
 <head><title>API Service</title></head>
@@ -179,7 +188,7 @@ EOF
 
 បន្ថែម JSON សម្រាប់សាកល្បង៖
 ```bash
-sudo tee /var/www/proxy-lab/6001/users.json > /dev/null <<'EOF'
+sudo tee /var/www/proxy-lab/api/users.json > /dev/null <<'EOF'
 {
   "service": "API",
   "port": 6001,
@@ -195,7 +204,7 @@ EOF
 
 បង្កើត Admin page៖
 ```bash
-sudo tee /var/www/proxy-lab/6002/index.html > /dev/null <<'EOF'
+sudo tee /var/www/proxy-lab/admin/index.html > /dev/null <<'EOF'
 <!DOCTYPE html>
 <html>
 <head><title>Admin Dashboard</title></head>
@@ -212,34 +221,68 @@ EOF
 ## 7. ដំណើរការ demo services
 ប្រើ systemd ដើម្បីឱ្យ services បន្តដំណើរការពេលបិទ SSH និងចាប់ផ្តើមវិញក្រោយ reboot។
 
-បង្កើត service template៖
-```bash
-sudo nano /etc/systemd/system/proxy-lab@.service
-```
+បង្កើត systemd services ទាំង 3៖
 
-ដាក់៖
-```ini
+```bash
+# 1. Service សម្រាប់ Home / Frontend (Port 6000)
+sudo tee /etc/systemd/system/proxy-home.service > /dev/null <<'EOF'
 [Unit]
-Description=Reverse proxy demo on port %i
+Description=Reverse proxy demo - Home (Port 6000)
 After=network.target
 
 [Service]
 Type=simple
 User=www-data
-WorkingDirectory=/var/www/proxy-lab/%i
-ExecStart=/usr/bin/python3 -m http.server %i --bind 127.0.0.1
+WorkingDirectory=/var/www/proxy-lab/home
+ExecStart=/usr/bin/python3 -m http.server 6000 --bind 127.0.0.1
 Restart=on-failure
 RestartSec=3
 
 [Install]
 WantedBy=multi-user.target
-```
-> Save ដោយចុច៖ `Ctrl+O` → `Enter` → `Ctrl+X`។
+EOF
 
-ចាប់ផ្តើម services៖
+# 2. Service សម្រាប់ API (Port 6001)
+sudo tee /etc/systemd/system/proxy-api.service > /dev/null <<'EOF'
+[Unit]
+Description=Reverse proxy demo - API (Port 6001)
+After=network.target
+
+[Service]
+Type=simple
+User=www-data
+WorkingDirectory=/var/www/proxy-lab/api
+ExecStart=/usr/bin/python3 -m http.server 6001 --bind 127.0.0.1
+Restart=on-failure
+RestartSec=3
+
+[Install]
+WantedBy=multi-user.target
+EOF
+
+# 3. Service សម្រាប់ Admin (Port 6002)
+sudo tee /etc/systemd/system/proxy-admin.service > /dev/null <<'EOF'
+[Unit]
+Description=Reverse proxy demo - Admin (Port 6002)
+After=network.target
+
+[Service]
+Type=simple
+User=www-data
+WorkingDirectory=/var/www/proxy-lab/admin
+ExecStart=/usr/bin/python3 -m http.server 6002 --bind 127.0.0.1
+Restart=on-failure
+RestartSec=3
+
+[Install]
+WantedBy=multi-user.target
+EOF
+```
+
+ចាប់ផ្តើម services ទាំង 3៖
 ```bash
 sudo systemctl daemon-reload
-sudo systemctl enable --now proxy-lab@6000 proxy-lab@6001 proxy-lab@6002
+sudo systemctl enable --now proxy-home proxy-api proxy-admin
 ```
 
 ពិនិត្យ៖
@@ -271,11 +314,11 @@ curl http://127.0.0.1:6002/
 sudo nano /etc/nginx/sites-available/web.conf
 ```
 
-ដាក់ config ខាងក្រោម ហើយប្តូរ domain៖
+ដាក់ config ខាងក្រោមសម្រាប់ domain **`codebyme.cyou`**៖
 ```nginx
 server {
     listen 80;
-    server_name site.com www.site.com;
+    server_name codebyme.cyou www.codebyme.cyou;
 
     proxy_http_version 1.1;
     proxy_set_header Host $host;
@@ -346,12 +389,11 @@ sudo systemctl reload nginx
 ## 10. សាកល្បង Nginx មុនពឹងផ្អែកលើ DNS
 នៅក្នុង EC2៖
 ```bash
-curl -H "Host: site.com" http://127.0.0.1/
-curl -H "Host: site.com" http://127.0.0.1/api/
-curl -H "Host: site.com" http://127.0.0.1/api/users.json
-curl -H "Host: site.com" http://127.0.0.1/admin/
+curl -H "Host: codebyme.cyou" http://127.0.0.1/
+curl -H "Host: codebyme.cyou" http://127.0.0.1/api/
+curl -H "Host: codebyme.cyou" http://127.0.0.1/api/users.json
+curl -H "Host: codebyme.cyou" http://127.0.0.1/admin/
 ```
-*(ប្តូរ `site.com` ក្នុង commands ទាំងនេះទៅ domain របស់អ្នកដែរ)*
 
 | Request | លទ្ធផលរំពឹងទុក |
 | :--- | :--- |
@@ -361,10 +403,10 @@ curl -H "Host: site.com" http://127.0.0.1/admin/
 | `/admin/` | Admin Dashboard |
 
 បន្ទាប់មកបើក browser៖
-- `http://site.com/`
-- `http://site.com/api/`
-- `http://site.com/api/users.json`
-- `http://site.com/admin/`
+- `http://codebyme.cyou/`
+- `http://codebyme.cyou/api/`
+- `http://codebyme.cyou/api/users.json`
+- `http://codebyme.cyou/admin/`
 
 > [!NOTE]
 > ប្រើ `http://` សម្រាប់ដំណាក់កាលនេះ ព្រោះ config ខាងលើមិនទាន់មាន SSL certificate។
@@ -407,7 +449,7 @@ location /api/ {
 
 បញ្ឈប់ demo services មុន ដើម្បីឱ្យ ports ទំនេរ៖
 ```bash
-sudo systemctl disable --now proxy-lab@6000 proxy-lab@6001 proxy-lab@6002
+sudo systemctl disable --now proxy-home proxy-api proxy-admin
 ```
 
 > [!IMPORTANT]
@@ -437,7 +479,7 @@ sudo tail -n 50 /var/log/nginx/error.log
 
 មើល API demo logs៖
 ```bash
-sudo journalctl -u proxy-lab@6001 -n 50 --no-pager
+sudo journalctl -u proxy-api -n 50 --no-pager
 ```
 
 ពិនិត្យ config ដែល Nginx បាន load៖
