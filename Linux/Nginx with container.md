@@ -1,284 +1,346 @@
-# Nginx Reverse Proxy ជាមួយ Docker Container + FileZilla on EC2
+# ការដំណើរការ Multi-Container Nginx ជាមួយ Docker លើ AWS EC2
 
-នេះជាជំហានលម្អិតពីដំបូង៖ **បង្កើត Docker container → Configure Nginx → Upload index.html តាម FileZilla → បើក codebyme.cyou**។
+## តារាងរៀបចំ Containers និង Ports
 
-យើងប្រើ container ចំនួន 3 តាមលំហាត់៖
-
-| URL | Container | Port |
-| :--- | :--- | :--- |
-| `codebyme.cyou/` | Frontend | `6000` |
-| `codebyme.cyou/api/` | API demo | `6001` |
-| `codebyme.cyou/admin/` | Admin demo | `6002` |
-
-> [!NOTE]
-> អ្នកនឹង upload `index.html` របស់អ្នកទៅ Frontend។ API និង Admin ប្រើទំព័រសាកល្បងសិន។
+| Website | Container | Port ខាងក្រៅ | URL |
+| :--- | :--- | :--- | :--- |
+| **Home** | `home` | `7001` | `http://YOUR_ELASTIC_IP:7001` |
+| **API** | `api` | `7002` | `http://YOUR_ELASTIC_IP:7002` |
+| **Admin** | `admin` | `7003` | `http://YOUR_ELASTIC_IP:7003` |
 
 ---
 
-## 1. ភ្ជាប់ទៅ Ubuntu server
-បើក PowerShell នៅ folder ដែលមាន SSH key ហើយរត់៖
+## ១. រៀបចំ EC2
+
+1. បង្កើត **Ubuntu EC2 instance** ហើយទាញយក key `mykey.pem`។
+2. នៅផ្នែក **Elastic IPs** ចុច **Allocate Elastic IP address** រួច **Associate** ទៅកាន់ instance នោះ ([Amazon Elastic Compute Cloud](https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/working-with-eips.html))។
+3. នៅ **Security Group → Inbound rules** បន្ថែម៖
+
+| Type | Port | Source |
+| :--- | :--- | :--- |
+| **SSH** | `22` | `My IP` |
+| **Custom TCP** | `7001` | `0.0.0.0/0` |
+| **Custom TCP** | `7002` | `0.0.0.0/0` |
+| **Custom TCP** | `7003` | `0.0.0.0/0` |
+
+> [!NOTE]
+> Port `7001–7003` ត្រូវបើក inbound ទើប browser ខាងក្រៅអាចចូលមើលបាន។ ចំណែកឯ SSH (`22`) គួរកំណត់ត្រឹមតែ IP ផ្ទាល់ខ្លួនរបស់អ្នកដើម្បីសុវត្ថិភាព ([Amazon Elastic Compute Cloud](https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/creating-security-group.html))។
+
+---
+
+## ២. SSH និងដំឡើង Docker
+
+បើក **PowerShell** នៅលើកុំព្យូទ័ររបស់អ្នក (នៅ folder ណាដែលមាន `mykey.pem`)៖
+
 ```powershell
-ssh -i "your-key.pem" ubuntu@YOUR_PUBLIC_IP
+ssh -i .\mykey.pem ubuntu@YOUR_ELASTIC_IP
 ```
 
-> [!NOTE]
-> ជំនួស `your-key.pem` និង `YOUR_PUBLIC_IP` ជាតម្លៃពិតប្រាកដរបស់អ្នក។  
-> Command ក្នុងជំហាន 2–7 ខាងក្រោម ត្រូវរត់នៅក្នុង SSH terminal នេះ។
+បន្ទាប់មករត់នៅលើ EC2៖
 
----
-
-## 2. ដំឡើង Docker និង Nginx
-បើបានដំឡើងរួច អាចរំលងការដំឡើង៖
 ```bash
 sudo apt update
-sudo apt install -y docker.io nginx curl
-
+sudo apt install -y docker.io
 sudo systemctl enable --now docker
-sudo systemctl enable --now nginx
+sudo systemctl status docker
 ```
 
-ពិនិត្យ៖
+- ចុច `q` ដើម្បីចេញពីផ្ទាំង status។
+- ពិនិត្យ user ហើយបន្ថែម user ដែលកំពុងប្រើ (`ubuntu`) ទៅ Docker group៖
+
 ```bash
-sudo systemctl is-active docker
-sudo systemctl is-active nginx
+whoami
+sudo usermod -aG docker ubuntu
+exit
 ```
-*(ទាំងពីរគួរបង្ហាញ `active`)*
+
+> [!IMPORTANT]
+> ប្រសិនបើអ្នក SSH ជា `ubuntu` ត្រូវប្រើ `sudo usermod -aG docker ubuntu` (មិនមែន `... docker root` ទេ)។ ការចូល Docker group ផ្ដល់សិទ្ធិខ្ពស់ស្មើ root ដូច្នេះប្រើតែលើ user ដែលអ្នកទុកចិត្ត ([Docker Docs](https://docs.docker.com/engine/install/linux-postinstall))។
+
+SSH ចូលម្ដងទៀត ហើយពិនិត្យ៖
+
+```powershell
+ssh -i .\mykey.pem ubuntu@YOUR_ELASTIC_IP
+```
+
+```bash
+whoami
+id
+docker --version
+```
+
+*(ក្នុងលទ្ធផល `id` គួរឃើញ group `docker`)*
 
 ---
 
-## 3. បង្កើត folder សម្រាប់ file website
-```bash
-mkdir -p /home/ubuntu/nginx-container/frontend
-mkdir -p /home/ubuntu/nginx-container/api
-mkdir -p /home/ubuntu/nginx-container/admin
-```
+## ៣. ដំណើរការ Nginx ៣ Containers
 
-បង្កើតទំព័រសាកល្បង៖
-```bash
-echo '<h1>Frontend is working</h1>' > /home/ubuntu/nginx-container/frontend/index.html
-echo '<h1>API container is working</h1>' > /home/ubuntu/nginx-container/api/index.html
-echo '<h1>Admin container is working</h1>' > /home/ubuntu/nginx-container/admin/index.html
-```
+នៅលើ EC2៖
 
-កំណត់សិទ្ធិដើម្បីអាច upload តាម FileZilla៖
 ```bash
-sudo chown -R ubuntu:ubuntu /home/ubuntu/nginx-container
-sudo chmod -R u+rwX,go+rX /home/ubuntu/nginx-container
-```
-
----
-
-## 4. បង្កើត Docker containers
-ពិនិត្យមុន៖
-```bash
-sudo docker ps -a
+docker pull nginx:latest
+docker run -d --name home -p 7001:80 --restart unless-stopped nginx:latest
+docker run -d --name api -p 7002:80 --restart unless-stopped nginx:latest
+docker run -d --name admin -p 7003:80 --restart unless-stopped nginx:latest
+docker ps
 ```
 
 > [!TIP]
-> បើមាន `lab-frontend`, `lab-api`, `lab-admin` ដែលបានបង្កើតតាមជំហានមុនរួចហើយ សូមរំលង command បង្កើត container ទាំងនោះ។
+> - `7001:80` មានន័យថា port `7001` លើ EC2 ភ្ជាប់ទៅកាន់ port `80` ក្នុង container។
+> - Option `--restart unless-stopped` ជួយឱ្យ containers ចាប់ផ្ដើមដំណើរការឡើងវិញដោយស្វ័យប្រវត្តិក្រោយពេល server reboot។
 
-បើមិនទាន់មាន រត់៖
-```bash
-sudo docker pull nginx:alpine
+---
+
+## ៤. បង្កើត Website Files លើកុំព្យូទ័ររបស់អ្នក
+
+ក្នុង **PowerShell** បង្កើត folders និង `index.html`៖
+
+```powershell
+mkdir home, api, admin
+Set-Content .\home\index.html '<h1>Home Website - Port 7001</h1>'
+Set-Content .\api\index.html '<h1>API Website - Port 7002</h1>'
+Set-Content .\admin\index.html '<h1>Admin Website - Port 7003</h1>'
 ```
 
-**Frontend៖**
-```bash
-sudo docker run -d \
-  --name lab-frontend \
-  --restart unless-stopped \
-  -p 127.0.0.1:6000:80 \
-  -v /home/ubuntu/nginx-container/frontend:/usr/share/nginx/html:ro \
-  nginx:alpine
-```
+រួច upload ពី PowerShell លើកុំព្យូទ័រអ្នក ទៅកាន់ EC2៖
 
-**API demo៖**
-```bash
-sudo docker run -d \
-  --name lab-api \
-  --restart unless-stopped \
-  -p 127.0.0.1:6001:80 \
-  -v /home/ubuntu/nginx-container/api:/usr/share/nginx/html:ro \
-  nginx:alpine
-```
-
-**Admin demo៖**
-```bash
-sudo docker run -d \
-  --name lab-admin \
-  --restart unless-stopped \
-  -p 127.0.0.1:6002:80 \
-  -v /home/ubuntu/nginx-container/admin:/usr/share/nginx/html:ro \
-  nginx:alpine
+```powershell
+scp -i .\mykey.pem -r .\home .\api .\admin ubuntu@YOUR_ELASTIC_IP:/home/ubuntu/
 ```
 
 ---
 
-## 5. សាកល្បង containers
-```bash
-sudo docker ps
+## ៥. Copy Files ចូលក្នុង Containers
 
-curl http://127.0.0.1:6000/
-curl http://127.0.0.1:6001/
-curl http://127.0.0.1:6002/
+SSH ចូលទៅ EC2 ហើយរត់ command៖
+
+```bash
+docker cp /home/ubuntu/home/. home:/usr/share/nginx/html/
+docker cp /home/ubuntu/api/. api:/usr/share/nginx/html/
+docker cp /home/ubuntu/admin/. admin:/usr/share/nginx/html/
 ```
-*(អ្នកគួរឃើញសាររបស់ Frontend, API និង Admin)*
+
+បើក Browser ដើម្បីសាកល្បង៖
+- `http://YOUR_ELASTIC_IP:7001`
+- `http://YOUR_ELASTIC_IP:7002`
+- `http://YOUR_ELASTIC_IP:7003`
+
+> [!NOTE]
+> វិធី `docker cp` នេះល្អសម្រាប់ lab។ ប្រសិនបើលុប container ហើយបង្កើតថ្មី ត្រូវ copy files ចូលម្ដងទៀត។
 
 ---
 
-## 6. Configure Nginx Reverse Proxy
-បើក configuration៖
+## ៦. បើក Port 80 នៅ Security Group
+
+1. ចូល **EC2 → Security Groups → ជ្រើស Security Group របស់ instance → Edit inbound rules**។
+2. បន្ថែម៖
+
+| Type | Port | Source |
+| :--- | :--- | :--- |
+| **HTTP** | `80` | `0.0.0.0/0` |
+
+3. ចុច **Save rules**។
+
+---
+
+## ៧. ដំឡើង Nginx លើ EC2
+
+SSH ចូល EC2 រួចរត់៖
+
+```bash
+sudo apt update
+sudo apt install -y nginx
+sudo systemctl enable --now nginx
+```
+
+> [!NOTE]
+> Nginx លើ EC2 ប្រើ port `80`។ Containers របស់អ្នកប្រើ ports `7001–7003` ដូច្នេះអាចដំណើរការជាមួយគ្នាបានដោយមិនជាន់គ្នាឡើយ។
+
+ពិនិត្យ containers៖
+
+```bash
+docker ps
+```
+
+សាកល្បង websites ពីក្នុង EC2៖
+
+```bash
+curl http://127.0.0.1:7001
+curl http://127.0.0.1:7002
+curl http://127.0.0.1:7003
+```
+
+*(គួរឃើញ HTML របស់ Home, API និង Admin តាមលំដាប់)*
+
+---
+
+## ៨. កំណត់ Nginx Reverse Proxy
+
+បង្កើត configuration file៖
+
 ```bash
 sudo nano /etc/nginx/sites-available/web.conf
 ```
 
-ដាក់ code ទាំងនេះ៖
+ដាក់ code ខាងក្រោម៖
+
 ```nginx
 server {
     listen 80;
-    server_name codebyme.cyou www.codebyme.cyou;
+    server_name site.com www.site.com;
 
     proxy_set_header Host $host;
     proxy_set_header X-Real-IP $remote_addr;
     proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
     proxy_set_header X-Forwarded-Proto $scheme;
 
+    # Home container
     location / {
-        proxy_pass http://127.0.0.1:6000;
+        proxy_pass http://127.0.0.1:7001;
     }
 
+    # Redirect /api to /api/
     location = /api {
         return 301 /api/;
     }
 
+    # API container
     location /api/ {
-        proxy_pass http://127.0.0.1:6001/;
+        proxy_pass http://127.0.0.1:7002/;
     }
 
+    # Redirect /admin to /admin/
     location = /admin {
         return 301 /admin/;
     }
 
+    # Admin container
     location /admin/ {
-        proxy_pass http://127.0.0.1:6002/;
+        proxy_pass http://127.0.0.1:7003/;
     }
 }
 ```
 
+- រក្សាទុកដោយចុច `Ctrl + O` → `Enter` → `Ctrl + X`។
+
 > [!NOTE]
-> រក្សាទុកដោយចុច៖ `Ctrl + O` → `Enter` → `Ctrl + X`។  
-> ប្រើ configuration តែមួយសម្រាប់ `codebyme.cyou` ដើម្បីជៀសវាង domain ស្ទួនក្នុង Nginx។
+> **ហេតុអ្វី `7002/` និង `7003/` មាន `/` នៅខាងចុង?**
+> វាធ្វើឱ្យ Nginx បញ្ជូន `/api/` ទៅ `/` ក្នុង API container និង `/admin/` ទៅ `/` ក្នុង Admin container ដែលមាន `index.html` របស់អ្នក ([Nginx Docs](https://nginx.org/en/docs/http/ngx_http_proxy_module.html))។
 
----
+បើក configuration (បង្កើត symlink ទៅ `sites-enabled`)៖
 
-## 7. Enable configuration
-បង្កើត link បើមិនទាន់មាន៖
 ```bash
-if [ ! -e /etc/nginx/sites-enabled/web.conf ] && [ ! -L /etc/nginx/sites-enabled/web.conf ]; then
-    sudo ln -s /etc/nginx/sites-available/web.conf /etc/nginx/sites-enabled/web.conf
-fi
+sudo ln -s /etc/nginx/sites-available/web.conf /etc/nginx/sites-enabled/web.conf
 ```
 
-ពិនិត្យ៖
+បើវាប្រាប់ File exists សូមពិនិត្យថា link មានរួចហើយ៖
+
+```bash
+ls -l /etc/nginx/sites-enabled/web.conf
+```
+
+ពិនិត្យ configuration៖
+
 ```bash
 sudo nginx -t
 ```
 
-បើបង្ហាញ `syntax is ok` និង `test is successful` រត់៖
+បើឃើញ `syntax is ok` និង `test is successful` រួច reload Nginx៖
+
 ```bash
 sudo systemctl reload nginx
 ```
 
-សាកល្បង៖
-```bash
-curl -H "Host: codebyme.cyou" http://127.0.0.1/
-```
-គួរឃើញ៖
-```html
-<h1>Frontend is working</h1>
-```
-
----
-
-## 8. កំណត់ DNS និង Security Group
-
-**នៅ DNS provider របស់ `codebyme.cyou` បង្កើត៖**
-
-| Type | Name | Value |
-| :--- | :--- | :--- |
-| **A** | `@` | Public IP ឬ Elastic IP របស់ server |
-| **A** | `www` | IP ដូចគ្នា |
-
 > [!TIP]
-> **បើប្រើ Route 53៖** ចូល **Hosted zones** → `codebyme.cyou` → **Create record**។ សម្រាប់ domain ដើម ទុក Record name ទទេ។ Domain ត្រូវប្រើ Nameservers របស់ Hosted Zone នោះផងដែរ។
+> Path ត្រឹមត្រូវគឺ `sites-available` និង `sites-enabled`។
 
-**ក្នុង EC2 → Security Groups → Inbound rules អនុញ្ញាត៖**
+---
 
-| Type | Port | Source |
+## ៩. កំណត់ Route 53
+
+### ៩.១ បង្កើត Hosted Zone
+
+1. ចូល [AWS Route 53](https://console.aws.amazon.com/route53/)
+2. ចុច **Hosted zones → Create hosted zone**
+3. បំពេញព័ត៌មាន៖
+   - **Domain name:** `site.com`
+   - **Type:** `Public hosted zone`
+4. ចុច **Create hosted zone**
+
+*(បើមាន Hosted Zone សម្រាប់ domain នេះរួចហើយ សូមប្រើរបស់ដែលមាន)*
+
+### ៩.២ ភ្ជាប់ Nameservers ទៅ domain
+
+1. ក្នុង Hosted Zone រក record ប្រភេទ **NS** ហើយ copy Nameservers ទាំង ៤។
+2. ចូលគេហទំព័រដែលអ្នកទិញ domain → ផ្នែក **Nameservers** → ដាក់ Nameservers របស់ Route 53 ទាំង ៤ រួច Save។
+3. វាធ្វើឱ្យ domain ប្រើ Route 53 ជា DNS provider។ បើ domain ប្រើ Nameservers នេះរួចហើយ មិនចាំបាច់ប្ដូរទៀតទេ ([Amazon Route 53 Documentation](https://docs.aws.amazon.com/Route53/latest/DeveloperGuide/migrate-dns-domain-in-use.html))។
+
+### ៩.៣ បង្កើត A Records
+
+ក្នុង Hosted Zone ចុច **Create record** ហើយបង្កើត ២ records៖
+
+| Setting | Domain ដើម | www |
 | :--- | :--- | :--- |
-| **SSH** | 22 | My IP |
-| **HTTP** | 80 | `0.0.0.0/0` |
-
-> [!IMPORTANT]
-> មិនចាំបាច់បើក port 6000–6002 ទៅ Internet។
-
-បើ Ubuntu ប្រើ UFW សូមពិនិត្យ៖
-```bash
-sudo ufw status
-```
-បើ active អនុញ្ញាត HTTP៖
-```bash
-sudo ufw allow 80/tcp
-```
-
----
-
-## 9. ភ្ជាប់ FileZilla
-នៅលើកុំព្យូទ័ររបស់អ្នក បើក **FileZilla** → **File** → **Site Manager** → **New site**។
-
-បំពេញ៖
-
-| Setting | Value |
-| :--- | :--- |
-| **Protocol** | SFTP – SSH File Transfer Protocol |
-| **Host** | Public IP ឬ Elastic IP របស់ server |
-| **Port** | `22` |
-| **Logon Type** | Key file |
-| **User** | `ubuntu` |
-| **Key file** | ជ្រើស file `.pem` របស់អ្នក |
-
-ចុច **Connect**។ ពេលភ្ជាប់លើកដំបូង ផ្ទៀងផ្ទាត់ host key ថាជារបស់ server អ្នក មុនទទួលយក។
-
----
-
-## 10. Upload តែ index.html
-1. **នៅផ្នែកខាងស្ដាំ Remote site** បញ្ចូល៖
-   ```text
-   /home/ubuntu/nginx-container/frontend/
-   ```
-2. **នៅផ្នែកខាងឆ្វេង៖**
-   - រក file `index.html` របស់អ្នក។
-   - អូស file នោះទៅ folder ខាងស្ដាំ។
-   - ជ្រើស **Overwrite** ដើម្បីជំនួស file សាកល្បង។
-3. រង់ចាំឱ្យ upload ចប់ ហើយពិនិត្យ **Failed transfers** ថាគ្មានការបរាជ័យ។
-
-ទីតាំង file ចុងក្រោយត្រូវជា៖
-```text
-/home/ubuntu/nginx-container/frontend/index.html
-```
+| **Record name** | *(ទុកទទេ)* | `www` |
+| **Record type** | `A` | `A` |
+| **Value** | `YOUR_ELASTIC_IP` | `YOUR_ELASTIC_IP` |
+| **Alias** | `Off` | `Off` |
+| **TTL** | `300` | `300` |
+| **Routing policy** | `Simple` | `Simple` |
 
 > [!NOTE]
-> បើ upload តែ file មួយ CSS និង JavaScript របស់អ្នកគួរតែមាននៅក្នុង `index.html` ឬប្រើ URL ខាងក្រៅ។ រូបភាពដែលយោងទៅ file ក្នុងកុំព្យូទ័រ នឹងមិនបង្ហាញទេ រហូតដល់បាន upload រូបនោះ។
+> A records ទាំងនេះចង្អុល domain ទៅ Elastic IP របស់ EC2។ **មិនត្រូវ**បង្កើត DNS records សម្រាប់ `/api` ឬ `/admin` ទេ ព្រោះទាំងនេះជា URL paths ដែល Nginx គ្រប់គ្រង ([Amazon Route 53 Documentation](https://docs.aws.amazon.com/Route53/latest/DeveloperGuide/dns-configuring-new-domain.html))។
 
 ---
 
-## 11. បើក website
-ចូល៖ [http://codebyme.cyou/](http://codebyme.cyou/)  
-ចុច `Ctrl + F5` ដើម្បីមើលទំព័រថ្មី។ ដោយប្រើ folder mount ខាងលើ អ្នកអាច upload ជំនួស `index.html` ពេលក្រោយបាន ដោយមិនចាំបាច់ restart container។
+## ១០. សាកល្បង
 
-បើឃើញ **502 Bad Gateway** ពិនិត្យ៖
-```bash
-sudo docker ps -a
-curl http://127.0.0.1:6000/
-sudo tail -n 30 /var/log/nginx/error.log
+លើ **Windows PowerShell** ពិនិត្យ DNS៖
+
+```powershell
+nslookup site.com
+nslookup www.site.com
 ```
+
+*(លទ្ធផលគួរបង្ហាញ Elastic IP របស់អ្នក។ បើទើបប្ដូរ Nameservers អាចត្រូវរង់ចាំឱ្យ DNS update/propagate)*
+
+បើក Browser៖
+- `http://site.com/`
+- `http://site.com/api/`
+- `http://site.com/admin/`
+
+| URL | លទ្ធផលរំពឹងទុក |
+| :--- | :--- |
+| `http://site.com/` | Home Website - Port 7001 |
+| `http://site.com/api/` | API Website - Port 7002 |
+| `http://site.com/admin/` | Admin Website - Port 7003 |
+
+អ្នកអាចសាកល្បង Nginx មុន DNS update បាន ដោយរត់លើ EC2៖
+
+```bash
+curl -H "Host: site.com" http://127.0.0.1/
+curl -H "Host: site.com" http://127.0.0.1/api/
+curl -H "Host: site.com" http://127.0.0.1/admin/
+```
+
+> [!TIP]
+> ក្រោយចូលតាម domain បានជោគជ័យហើយ អ្នកអាចលុប inbound rules `7001–7003` ចេញពី Security Group បាន ដើម្បីឱ្យការចូលពីខាងក្រៅទាំងអស់ឆ្លងកាត់តែ Nginx port `80`។ Nginx នៅតែអាចភ្ជាប់ទៅ containers តាម `127.0.0.1:7001–7003` បានធម្មតា។
+
+---
+
+## Docker Commands សម្រាប់ពិនិត្យ និងគ្រប់គ្រង
+
+```bash
+docker images -a               # មើល images ទាំងអស់
+docker ps                      # មើល containers កំពុងដំណើរការ
+docker ps -a                   # មើល containers ទាំងអស់ (រួមទាំង stopped)
+docker logs home               # មើល logs របស់ container home
+docker exec -it home /bin/bash # ចូលក្នុង shell របស់ container
+docker rm -f home              # បង្ខំលុប container home
+docker rmi nginx:latest        # លុប image ក្រោយគ្មាន container ប្រើវា
+```
+
+> [!TIP]
+> **ចំណាំកែសម្រួលអក្ខរាវិរុទ្ធ (Typo Corrections):**
+> - `whomai` ត្រូវកែជា `whoami`
+> - `nignx:latest` ត្រូវកែជា `nginx:latest`
