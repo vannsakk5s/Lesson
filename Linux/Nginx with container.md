@@ -328,6 +328,98 @@ curl -H "Host: site.com" http://127.0.0.1/admin/
 
 ---
 
+## ១១. ដំឡើង SSL/HTTPS ជាមួយ Certbot (Let's Encrypt)
+
+### ១១.១ បើក Port 443 (HTTPS) នៅ Security Group
+
+មុននឹងដំឡើង SSL ត្រូវប្រាកដថា EC2 Security Group បានបើក Port 443៖
+
+1. ចូល **EC2 → Security Groups → ជ្រើស Security Group របស់ instance → Edit inbound rules**
+2. បន្ថែម៖
+
+| Type | Port | Source |
+| :--- | :--- | :--- |
+| **HTTPS** | `443` | `0.0.0.0/0` |
+
+3. ចុច **Save rules**
+
+---
+
+### ១១.២ ដំឡើង Certbot ក្នុង Ubuntu EC2
+
+រត់ក្នុង SSH terminal របស់ EC2៖
+
+```bash
+sudo apt update
+sudo apt install -y snapd
+sudo snap install --classic certbot
+```
+
+---
+
+### ១១.៣ ពិនិត្យ Nginx Configuration
+
+មុននឹងស្នើសុំ Certificate ត្រូវប្រាកដថា Nginx configuration គ្មានបញ្ហា syntax៖
+
+```bash
+sudo nginx -t
+```
+
+*(ត្រូវឃើញ `syntax is ok` និង `test is successful`)*
+
+---
+
+### ១១.៤ បង្កើត SSL Certificate
+
+បើទាំង `codebyme.cyou` និង `www.codebyme.cyou` បើកតាម HTTP បានហើយ សូមរត់៖
+
+```bash
+sudo /snap/bin/certbot --nginx \
+  -d codebyme.cyou \
+  -d www.codebyme.cyou \
+  --redirect
+```
+
+> [!NOTE]
+> បញ្ចូល **Email** និងវាយ `y` ដើម្បីយល់ព្រមតាម **Terms of Service** តាមការណែនាំនៅលើ screen។ Certbot នឹងកែ Nginx configuration ដោយស្វ័យប្រវត្តិដើម្បីបើក HTTPS និងបញ្ជូន (redirect) traffic ពី HTTP (Port 80) ទៅ HTTPS (Port 443)។
+
+បើ subdomain `www` មិនទាន់ដំណើរការ សូមប្រើតែ root domain៖
+
+```bash
+sudo /snap/bin/certbot --nginx -d codebyme.cyou --redirect
+```
+
+---
+
+### ១១.៥ ពិនិត្យការបន្ត Certificate (Auto-renewal)
+
+SSL certificate របស់ Let's Encrypt មានសុពលភាព ៩០ ថ្ងៃ ហើយ Certbot នឹង renew ដោយស្វ័យប្រវត្តិតាម systemd timer។ អ្នកអាចធ្វើតេស្តសាកល្បងដំណើរការ renew ដោយរត់៖
+
+```bash
+sudo /snap/bin/certbot renew --dry-run
+```
+
+---
+
+### ១១.៦ សាកល្បងបើក HTTPS លើ Browser
+
+បើក Browser ដើម្បីសាកល្បង៖
+- `https://codebyme.cyou`
+- `https://codebyme.cyou/api/`
+- `https://codebyme.cyou/admin/`
+
+| URL | លទ្ធផលរំពឹងទុក |
+| :--- | :--- |
+| `https://codebyme.cyou/` | Home Website - Port 7001 (🔒 HTTPS Secure) |
+| `https://codebyme.cyou/api/` | API Website - Port 7002 (🔒 HTTPS Secure) |
+| `https://codebyme.cyou/admin/` | Admin Website - Port 7003 (🔒 HTTPS Secure) |
+
+> [!TIP]
+> **យន្តការដំណើរការ (SSL Termination):**
+> HTTPS នឹងបញ្ចប់នៅត្រឹម **Nginx Reverse Proxy** ហើយ Nginx នឹងបន្តបញ្ជូន traffic ទៅកាន់ Docker containers តាម ports `7001`, `7002`, និង `7003` ដដែល (internal HTTP proxy) ដោយមិនចាំបាច់កំណត់ SSL នៅក្នុង containers ផ្ទាល់ឡើយ។
+
+---
+
 ## Docker Commands សម្រាប់ពិនិត្យ និងគ្រប់គ្រង
 
 ```bash
